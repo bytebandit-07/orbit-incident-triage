@@ -1,1 +1,210 @@
-<!-- Orbit SOC Command Center UI -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Orbit Triage – Security Incident Assistant</title>
+<script src="https://cdn.tailwindcss.com/3.4.17"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.8/dist/cdn.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script>
+tailwind.config={theme:{extend:{colors:{brand:{100:'#ffe3da',200:'#ffc7b5',300:'#ff9f85',400:'#ff6a45',500:'#f2511f',950:'#2b0e06'}},fontFamily:{sans:['Manrope','system-ui','sans-serif'],mono:['JetBrains Mono','ui-monospace','monospace']}}}}
+const I={folder:'M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.7-.9L9.6 3.9A2 2 0 0 0 7.9 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z',chat:'M7.9 20A9 9 0 1 0 4 16.1L2 22Z',doc:'M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7ZM14 2v4a2 2 0 0 0 2 2h4M10 9H8M16 13H8M16 17H8',shield:'M20 13c0 5-3.5 7.5-7.7 9a1 1 0 0 1-.6 0C7.500 20.500 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.500-1.200 6.200-2.700a1.200 1.200 0 0 1 1.500 0C14.500 3.800 17 5 19 5a1 1 0 0 1 1 1z',check:'M20 6 9 17l-5-5',x:'M18 6 6 18M6 6l12 12',send:'m22 2-7 20-4-9-9-4ZM22 2 11 13',warn:'m21.700 18-8-14a2 2 0 0 0-3.500 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.700-3M12 9v4M12 17h.01',pin:'M12 17v5M9 10.800a2 2 0 0 1-1.100 1.800l-1.800.9A2 2 0 0 0 5 15.200V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.8a2 2 0 0 0-1.100-1.800l-1.800-.9A2 2 0 0 1 15 10.800V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z'};
+const N=['01_security_rules','02_asset_inventory','03_severity_matrix','04_escalation_contacts','05_change_calendar','06_runbook_phishing','07_runbook_credentials','08_runbook_web_attack','09_runbook_exfiltration','10_runbook_scanning','11_vpn.log','12_dc.log','13_web.log','14_perimeter_fw.log','15_internal_fw.log','16_email_gw.log','17_ids_alerts','18_user_directory','19_dhcp.log','20_log_coverage'];
+const T=(h,m,s)=>Date.UTC(2026,10,12,h,m,s);
+const EV=[
+{t:T(14,2,11),z:'+00:00',s:'Perimeter firewall',x:'Denied 203.0.113.45 on RDP (3389)',c:'14_perimeter_fw.log|3',en:['203.0.113.45'],k:'w'},
+{t:T(14,3,40),z:'+00:00',s:'IDS',x:'Port scan alert IDS-2041',c:'17_ids_alerts|IDS-2041',en:['203.0.113.45'],k:'w'},
+{t:T(14,26,52),z:'+05:00',s:'VPN',x:'Login OK for j.alvarez, address 10.8.0.23',c:'11_vpn.log|4',en:['203.0.113.45','j.alvarez'],k:'b'},
+{t:T(14,27,30),z:'-05:00',s:'Domain controller',x:'Logon 4624 on WS-0117',c:'12_dc.log|2',en:['j.alvarez','WS-0117'],k:'b'}];
+const D={
+'14_perimeter_fw.log':{z:'UTC',l:['2026-11-12T14:01:58Z ALLOW tcp 198.51.100.7:51022 > 10.0.4.12:443','2026-11-12T14:02:09Z DENY tcp 203.0.113.45:40112 > 10.0.0.5:22','2026-11-12T14:02:11Z DENY tcp 203.0.113.45:40113 > 10.0.0.5:3389','2026-11-12T14:02:12Z DENY tcp 203.0.113.45:40114 > 10.0.0.5:445']},
+'11_vpn.log':{z:'UTC+05:00',l:['2026-11-12 19:10:03 +05:00 LOGIN_OK user=m.khan src=198.51.100.22','2026-11-12 19:14:40 +05:00 LOGOUT user=m.khan','2026-11-12 19:20:17 +05:00 LOGIN_FAIL user=admin src=203.0.113.45','2026-11-12 19:26:52 +05:00 LOGIN_OK user=j.alvarez src=203.0.113.45 vip=10.8.0.23']},
+'12_dc.log':{z:'UTC-05:00',l:['2026-11-12 09:25:12 -05:00 EVT4624 user=svc-backup host=FS-02','2026-11-12 09:27:30 -05:00 EVT4624 user=j.alvarez host=WS-0117 src=10.8.0.23','2026-11-12 09:31:02 -05:00 EVT4672 user=j.alvarez privileges=standard']},
+'17_ids_alerts':{r:{'IDS-2041':{alert_id:'IDS-2041',signature:'Port scan, multiple ports',source:'203.0.113.45',time_utc:'14:03:40',priority:'Medium'}}},
+'02_asset_inventory':{r:{'WS-0117':{asset_tag:'WS-0117',type:'Laptop',owner:'j.alvarez',zone:'Remote users',criticality:'Medium'}}},
+'18_user_directory':{r:{'j.alvarez':{username:'j.alvarez',department:'Dispatch',vpn_access:'Yes',status:'Active'}}},
+'03_severity_matrix':{r:{'SEV-2':{row:'SEV-2',rule:'Scan followed by successful remote access',level:'High',response:'Respond within 1 hour'}}},
+'04_escalation_contacts':{r:{'SOC-T2':{row:'SOC-T2',role:'SOC Tier 2 on-call',reach:'[contact from file 04]'},'SEC-MGR':{row:'SEC-MGR',role:'IT Security Manager',reach:'[contact from file 04]'}}},
+'05_change_calendar':{r:{'none':{result:'No change ID covers 12 Nov 14:00–15:00 UTC for 10.0.0.5 or VPN'}}},
+'20_log_coverage':{r:{'15_internal_fw':{source:'15_internal_fw.log',gap:'No lines 14:00–15:00 UTC',timezone:'UTC+01:00'}}},
+'10_runbook_scanning':{r:{S1:{step:1,text:'Confirm scan source and ports'},S2:{step:2,text:'Check whether the source later authenticated'},S3:{step:3,text:'Block source at the perimeter'},S4:{step:4,text:'Reset credentials for affected user'}}}};
+const A=[
+{k:/scan|vpn|203|perimeter|sign.?in|login/i,title:'Scan source later signed in over VPN',ev:[0,1,2,3],seg:['After converting every log to UTC, 203.0.113.45 was denied on SSH, RDP and SMB at the perimeter (',{c:'14_perimeter_fw.log|3'},'), triggered a port-scan alert (',{c:'17_ids_alerts|IDS-2041'},'), and about 25 minutes later logged in to the VPN as j.alvarez (',{c:'11_vpn.log|4'},'). That session reached the domain controller from WS-0117 (',{c:'12_dc.log|2'},').']},
+{k:/10\.8|asset|WS-0117|host|who|owner/i,title:'VPN address belongs to WS-0117',ev:[2,3],seg:['The VPN gave 10.8.0.23 to j.alvarez (',{c:'11_vpn.log|4'},'). The domain controller shows that address logging on from WS-0117 (',{c:'12_dc.log|2'},'), a laptop owned by the same user (',{c:'02_asset_inventory|WS-0117'},').']}];
+function app(){return{
+page:'loader',utc:true,loaded:0,loading:false,q:'',busy:'',msgs:[],pins:[],drawer:null,gap:false,toast:'',f:'',done:{},n:N,al:false,cur:100,lanes:[['Perimeter firewall','+00:00'],['IDS','+00:00'],['VPN','+05:00'],['Domain controller','-05:00']],
+nav:[['loader','Data pack','folder'],['triage','Triage','chat'],['brief','Incident brief','doc']],
+tz:[['11_vpn.log','+05:00'],['12_dc.log','-05:00'],['13_web.log','+00:00'],['14_perimeter_fw.log','+00:00'],['15_internal_fw.log','+01:00'],['16_email_gw.log','+00:00']],
+sug:['Did the host that scanned us later sign in over VPN?','Which asset uses 10.8.0.23?'],
+off(e){return (e.z[0]=='-'?-1:1)*(+e.z.slice(1,3)*60+ +e.z.slice(4))},
+lane(l){return EV.filter(e=>e.s===l[0])},
+pos(e){let m=((e.t+(this.al?0:this.off(e)*60000))%864e5)/6e4;let r=this.al?[840,880]:[540,1200];return (m-r[0])/(r[1]-r[0])*100},
+clk(e){return new Date(e.t+(this.al?0:this.off(e)*60000)).toISOString().slice(11,19)},
+ticks(){return this.al?Array.from({length:9},(_,i)=>({p:i*12.5,l:'14:'+String(i*5).padStart(2,'0')})):[9,11,13,15,17,19].map(h=>({p:(h*60-540)/6.6,l:String(h).padStart(2,'0')+':00'}))},
+pts(){return EV.map((e,i)=>this.pos(e)+','+(i*64+32)).join(' ')},
+play(){this.al=true;this.cur=0;clearInterval(this._p);this._p=setInterval(()=>{this.cur+=2;if(this.cur>=100){this.cur=100;clearInterval(this._p)}},70)},
+ic(k){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-full w-full"><path d="'+I[k]+'"/></svg>'},
+route(){let h=location.hash.slice(1);this.page=['loader','triage','brief'].includes(h)?h:'loader'},
+go(p){if(p!=='loader'&&this.loaded<20)return;location.hash=p},
+load(){if(this.loading)return;this.loading=true;this.loaded=0;let t=setInterval(()=>{this.loaded++;if(this.loaded>=20){clearInterval(t);this.loading=false}},100)},
+tm(e){let d=new Date(e.t+(this.utc?0:(e.z[0]=='-'?-1:1)*(+e.z.slice(1,3)*60+ +e.z.slice(4))*60000));return d.toISOString().slice(11,19)+(this.utc?' UTC':' ('+e.z+')')},
+get ev(){let a=[...this.msgs].reverse().find(m=>m.ev);return a?a.ev.map(i=>EV[i]).filter(e=>!this.f||e.en.includes(this.f)):[]},
+get ents(){let a=[...this.msgs].reverse().find(m=>m.ev);return a?[...new Set(a.ev.flatMap(i=>EV[i].en))]:[]},
+lbl(c){let[f,r]=c.split('|');return f+':'+(D[f].l?'L'+r:r)},
+open(c){this.drawer=c},
+get dv(){if(!this.drawer)return null;let[f,r]=this.drawer.split('|');let d=D[f];return{f,z:d.z,l:d.l,hi:d.l?+r:0,row:d.r?d.r[r]:null,ref:r}},
+ask(t){t=(t||this.q).trim();if(!t||this.busy)return;this.q='';this.msgs.push({r:'u',t});this.busy='Searching files 01 to 20';
+setTimeout(()=>this.busy='Normalising time zones from file 20',650);
+setTimeout(()=>{this.busy='';let a=A.find(x=>x.k.test(t));this.msgs.push(a?{r:'a',seg:a.seg,ev:a.ev,title:a.title}:{r:'a',nf:1,seg:['Not found in data pack. No line or row in files 01 to 20 supports an answer.']});this.f='';this.$nextTick(()=>this.$refs.end&&this.$refs.end.scrollIntoView({behavior:'smooth'}))},1400)},
+pinned(m){return this.pins.includes(m)},
+pin(m){this.pins=this.pinned(m)?this.pins.filter(p=>p!==m):[...this.pins,m];this.say(this.pinned(m)?'Pinned to incident':'Removed from incident')},
+say(t){this.toast=t;clearTimeout(this._t);this._t=setTimeout(()=>this.toast='',1800)},
+get prog(){return Object.keys(this.done).filter(k=>this.done[k]).length},
+copy(){let s='INCIDENT BRIEF – Orbit Logistics\nSeverity: High (03_severity_matrix:SEV-2)\nChange match: none (05_change_calendar:none)\nRunbook: 10_runbook_scanning ('+this.prog+'/4 steps done)\nFindings:\n'+this.pins.map(p=>'- '+p.title+' ['+p.seg.filter(x=>x.c).map(x=>this.lbl(x.c)).join(', ')+']').join('\n');
+try{navigator.clipboard.writeText(s).then(()=>this.say('Brief copied'),()=>this.say('Copy blocked in this view'))}catch(e){this.say('Copy blocked in this view')}}
+}}
+</script>
+<style>
+:root{color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{background:#13151d;color:#e2e8f4}
+[x-cloak]{display:none!important}
+.glass{background:#1c1f2a;border:1px solid rgba(255,255,255,.07);box-shadow:0 12px 32px rgba(0,0,0,.28)}
+.bg{background:radial-gradient(800px 420px at 90% -8%,rgba(255,90,54,.15),transparent),radial-gradient(520px 320px at -5% 105%,rgba(120,110,255,.07),transparent)}
+@keyframes sh{to{background-position:-200% 0}}
+.shim{background:linear-gradient(90deg,#ff5a36,#ff9f85,#ff5a36);background-size:200% 100%;animation:sh 1.4s linear infinite}
+@keyframes pop{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.pop{animation:pop .3s ease both}
+@media (prefers-reduced-motion:reduce){.shim,.pop{animation:none}}
+button:focus-visible,input:focus-visible{outline:2px solid #ff9f85;outline-offset:2px}
+</style>
+</head>
+<body class="font-sans" x-data="app()" x-init="route()" @hashchange.window="route()" @keydown.escape.window="drawer=null;gap=false">
+<div class="bg flex min-h-screen flex-col md:flex-row">
+
+<aside class="order-2 flex shrink-0 border-t border-white/10 bg-[#171a24]/95 md:order-1 md:w-60 md:flex-col md:border-r md:border-t-0 md:p-5">
+ <div class="hidden items-center gap-3 pb-8 md:flex"><div class="h-7 w-7 rounded-lg bg-brand-400 shadow-[0_0_22px_rgba(255,90,54,.55)]"></div><div><div class="text-[15px] font-bold leading-none">Orbit Triage</div><div class="mt-1 text-xs text-white/50">Orbit Logistics SOC</div></div></div>
+ <nav class="flex w-full justify-around md:flex-col md:gap-1">
+  <template x-for="p in nav"><button @click="go(p[0])" :class="page===p[0]?'bg-brand-400/10 text-brand-300':'text-white/55 hover:text-white'" :disabled="p[0]!=='loader'&&loaded<20" class="flex min-h-[48px] items-center gap-3 rounded-xl px-4 text-sm font-semibold transition disabled:opacity-40"><span class="h-5 w-5" x-html="ic(p[2])"></span><span x-text="p[1]"></span></button></template>
+ </nav>
+ <div class="mt-auto hidden rounded-xl glass p-3 text-xs leading-relaxed text-white/60 md:block"><div class="mb-1 flex items-center gap-2 font-semibold text-white"><span class="h-2 w-2 animate-pulse rounded-full" :class="loaded>=20?'bg-brand-400':'bg-amber-400'"></span><span x-text="loaded>=20?'Data pack ready':'Waiting for data pack'"></span></div>Answers use files 01 to 20 only. Demo data.</div>
+</aside>
+
+<main class="order-1 min-w-0 flex-1 p-5 md:order-2 md:p-9">
+
+<!-- LOADER -->
+<section x-show="page==='loader'" x-cloak class="mx-auto max-w-5xl">
+ <h1 class="max-w-xl text-4xl font-extrabold leading-[1.05] tracking-tight md:text-5xl"><span class="text-brand-400">Load the incident files,</span><br>then ask what happened.</h1>
+ <p class="mt-4 max-w-lg text-white/60">Twenty files from Orbit Logistics. File 20 is read first so every log lands on one UTC clock.</p>
+ <div class="mt-7 flex flex-wrap items-center gap-3">
+  <button @click="load()" :disabled="loading" class="min-h-[48px] rounded-xl bg-brand-400 px-6 text-sm font-bold text-brand-950 shadow-[0_0_30px_rgba(255,90,54,.3)] transition hover:bg-brand-300 disabled:opacity-60" x-text="loaded>=20?'Reload sample pack':(loading?'Parsing…':'Load sample pack')"></button>
+  <button @click="go('triage')" :disabled="loaded<20" class="min-h-[48px] rounded-xl border border-white/15 px-6 text-sm font-semibold transition hover:bg-white/5 disabled:opacity-35">Start triage</button>
+  <div class="ml-auto text-sm text-white/60"><span class="font-bold text-white" x-text="loaded"></span> of 20 parsed</div>
+ </div>
+ <div class="mt-4 h-1.5 overflow-hidden rounded-full bg-white/10"><div class="h-full rounded-full transition-all duration-150" :class="loading?'shim':'bg-brand-400'" :style="'width:'+loaded*5+'%'"></div></div>
+ <div class="mt-6 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+  <template x-for="(f,i) in n"><div class="flex items-center gap-2.5 rounded-xl glass px-3 py-3 text-[13px] transition" :class="i<loaded?'border-brand-400/30':'opacity-60'"><span class="grid h-5 w-5 shrink-0 place-items-center rounded-full" :class="i<loaded?'bg-brand-400 text-brand-950':'bg-white/10 text-transparent'"><span class="h-3 w-3" x-html="ic('check')"></span></span><span class="truncate" x-text="f"></span></div></template>
+ </div>
+ <div x-show="loaded>=20" x-cloak class="pop mt-6 grid gap-4 lg:grid-cols-5">
+  <div class="rounded-2xl glass p-5 lg:col-span-3"><h2 class="text-lg font-bold">Time zones from file 20</h2><p class="mt-1 text-sm text-white/55">Shown in UTC across the app, with the source clock beside it.</p>
+   <table class="mt-3 w-full text-sm"><template x-for="r in tz"><tr class="border-t border-white/8"><td class="py-2.5 font-mono text-xs text-white/80" x-text="r[0]"></td><td class="py-2.5 text-right"><span class="rounded-md bg-indigo-400/15 px-2 py-0.5 font-mono text-xs text-indigo-300" x-text="'UTC'+r[1]"></span></td></tr></template></table></div>
+  <div class="rounded-2xl border border-amber-400/30 bg-amber-400/10 p-5 text-sm leading-relaxed text-amber-100 lg:col-span-2"><div class="mb-2 h-6 w-6 text-amber-300" x-html="ic('warn')"></div>Logs do not share a time zone. Comparing local times directly puts events in the wrong order, so triage always normalises first.</div>
+ </div>
+</section>
+
+<!-- TRIAGE -->
+<section x-show="page==='triage'" x-cloak class="mx-auto max-w-6xl">
+ <div class="flex flex-wrap items-center justify-between gap-3"><h1 class="text-3xl font-extrabold tracking-tight">Triage workspace</h1>
+  <div class="flex rounded-xl glass p-1 text-sm font-semibold"><button @click="utc=true" :class="utc?'bg-brand-400 text-brand-950':'text-white/60'" class="min-h-[40px] rounded-lg px-4">UTC</button><button @click="utc=false" :class="!utc?'bg-brand-400 text-brand-950':'text-white/60'" class="min-h-[40px] rounded-lg px-4">Source clock</button></div></div>
+ <div class="mt-6 rounded-2xl glass p-5">
+ <div class="flex flex-wrap items-start justify-between gap-3"><div><h2 class="text-lg font-bold">Time zone swimlane</h2><p class="mt-0.5 text-sm text-white/55">Each lane is one log source on its own clock. Align them to see the real order.</p></div>
+  <div class="flex flex-wrap items-center gap-2"><div class="flex rounded-xl border border-white/10 p-1 text-sm font-semibold"><button @click="al=false" :class="!al?'bg-indigo-400 text-indigo-950':'text-white/60'" class="min-h-[40px] rounded-lg px-3.5">As written</button><button @click="al=true;cur=100" :class="al?'bg-brand-400 text-brand-950':'text-white/60'" class="min-h-[40px] rounded-lg px-3.5">Aligned to UTC</button></div><button @click="play()" class="min-h-[40px] rounded-xl border border-white/15 px-4 text-sm font-semibold hover:bg-white/5">Replay chain</button></div></div>
+ <div class="mt-5 overflow-x-auto"><div class="relative min-w-[640px]">
+  <div class="flex"><div class="w-36 shrink-0 pb-1 text-xs text-white/45" x-text="al?'One clock: UTC':'Each source clock'"></div><div class="relative mx-7 h-6 flex-1"><template x-for="t in ticks()"><span class="absolute top-0 -translate-x-1/2 font-mono text-[11px] text-white/45" :style="'left:'+t.p+'%'" x-text="t.l"></span></template></div></div>
+  <template x-for="l in lanes"><div class="flex h-16 items-center border-t border-white/10"><div class="w-36 shrink-0 pr-3"><div class="text-sm font-semibold" x-text="l[0]"></div><span class="mt-1 inline-block rounded-md bg-indigo-400/15 px-1.5 py-0.5 font-mono text-[11px] text-indigo-300" x-text="'UTC'+l[1]"></span></div>
+   <div class="relative mx-7 h-full flex-1"><div class="absolute inset-x-0 top-1/2 h-px bg-white/10"></div>
+    <template x-for="e in lane(l)"><div><span class="absolute top-1.5 -translate-x-1/2 whitespace-nowrap font-mono text-[11px] transition-[left] duration-700 ease-out" :class="al?'text-brand-300':'text-indigo-300'" :style="'left:'+pos(e)+'%'" x-text="clk(e)"></span>
+    <button @click="open(e.c)" :title="e.x" :aria-label="e.x+' at '+clk(e)" :style="'left:'+pos(e)+'%'" :class="(al&&pos(e)>cur?'opacity-25 ':'')+(e.k==='b'?'bg-rose-400 shadow-[0_0_14px_rgba(251,113,133,.6)]':'bg-amber-400 shadow-[0_0_14px_rgba(251,191,36,.5)]')" class="absolute top-1/2 mt-1.5 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full ring-4 ring-[#171a24] transition-[left,opacity] duration-700 ease-out hover:scale-125"></button></div></template></div></div></template>
+  <svg class="pointer-events-none absolute" style="left:calc(9rem + 1.75rem);right:1.75rem;top:1.5rem;height:256px;width:calc(100% - 9rem - 3.5rem)" viewBox="0 0 100 256" preserveAspectRatio="none"><polyline :points="pts()" fill="none" stroke="#ff9f85" stroke-width="2" stroke-dasharray="5 5" vector-effect="non-scaling-stroke" :style="'opacity:'+(al?0.8:0)+';transition:opacity .4s .7s'"/></svg>
+  <div x-show="al" class="pointer-events-none absolute" style="left:calc(9rem + 1.75rem);right:1.75rem;top:1.5rem;height:256px"><div class="absolute inset-y-0 w-px bg-brand-300/70" :style="'left:'+cur+'%'"></div></div>
+ </div></div>
+ <div class="mt-4 flex flex-wrap items-center gap-4"><div class="min-w-[240px] flex-1 rounded-xl p-3.5 text-sm leading-relaxed" :class="al?'border border-brand-400/30 bg-brand-400/10 text-brand-100':'border border-indigo-400/30 bg-indigo-400/10 text-indigo-100'" x-text="al?'On one clock the order is clear: scan at 14:02:11, VPN login at 14:26:52 (24 min 41 s later), domain controller logon at 14:27:30. One attack chain.':'Read as written, the domain controller logon (09:27) looks hours before the scan (14:02). The order is wrong because the clocks differ.'"></div>
+  <label x-show="al" class="flex items-center gap-3 text-sm text-white/60">Replay<input type="range" min="0" max="100" x-model.number="cur" class="w-40 accent-brand-400" aria-label="Replay position"></label></div>
+</div>
+<div class="mt-6 grid gap-5 lg:grid-cols-5">
+  <div class="flex min-h-[520px] flex-col lg:col-span-3">
+   <div class="flex-1 space-y-4">
+    <div x-show="!msgs.length" class="rounded-2xl glass p-6"><p class="font-semibold">Ask about an IP, user, host or time window.</p><div class="mt-4 flex flex-wrap gap-2"><template x-for="s in sug"><button @click="ask(s)" class="min-h-[44px] rounded-xl border border-brand-400/25 bg-brand-400/10 px-4 text-left text-sm text-brand-200 transition hover:bg-brand-400/15" x-text="s"></button></template></div></div>
+    <template x-for="m in msgs"><div class="pop">
+     <div x-show="m.r==='u'" class="ml-auto w-fit max-w-[85%] rounded-2xl rounded-br-md bg-white/10 px-4 py-3 text-sm" x-text="m.t"></div>
+     <div x-show="m.r==='a'" class="rounded-2xl p-5" :class="m.nf?'border border-white/10 bg-white/[.02]':'glass'">
+      <p class="text-[15px] leading-[1.75] text-white/90"><template x-for="s in m.seg"><span><span x-show="typeof s==='string'" x-text="s"></span><button x-show="typeof s!=='string'" @click="open(s.c)" class="mx-0.5 rounded-md border border-brand-400/25 bg-brand-400/10 px-1.5 py-0.5 align-baseline font-mono text-[11px] text-brand-300 transition hover:bg-brand-400/20" x-text="s.c?lbl(s.c):''"></button></span></template></p>
+      <div x-show="!m.nf" class="mt-4 flex gap-2"><button @click="pin(m)" :class="pinned(m)?'bg-brand-400 text-brand-950':'border border-white/15'" class="flex min-h-[40px] items-center gap-2 rounded-lg px-3.5 text-sm font-semibold"><span class="h-4 w-4" x-html="ic('pin')"></span><span x-text="pinned(m)?'Pinned':'Add to incident'"></span></button><button x-show="pinned(m)" @click="go('brief')" class="min-h-[40px] rounded-lg border border-white/15 px-3.5 text-sm font-semibold">Open brief</button></div>
+     </div></div></template>
+    <div x-show="busy" class="flex items-center gap-3 text-sm text-white/60"><span class="h-2 w-2 animate-ping rounded-full bg-brand-400"></span><span x-text="busy"></span></div>
+    <div x-ref="end"></div>
+   </div>
+   <form @submit.prevent="ask()" class="sticky bottom-3 mt-5 flex gap-2 rounded-2xl border border-white/10 bg-[#1b1e29]/95 p-2 backdrop-blur"><label class="sr-only" for="q">Question</label><input id="q" x-model="q" placeholder="Ask about this incident" class="min-w-0 flex-1 bg-transparent px-3 text-sm placeholder:text-white/40 focus:outline-none"><button class="grid h-11 w-11 place-items-center rounded-xl bg-brand-400 text-brand-950 transition hover:bg-brand-300" aria-label="Ask"><span class="h-5 w-5" x-html="ic('send')"></span></button></form>
+  </div>
+  <aside class="rounded-2xl glass p-5 lg:col-span-2 lg:self-start">
+   <h2 class="text-lg font-bold">Evidence timeline</h2><p class="mt-0.5 text-sm text-white/50" x-text="utc?'All times in UTC':'Each time on its source clock'"></p>
+   <div x-show="ents.length" class="mt-3 flex flex-wrap gap-1.5"><button @click="f=''" :class="!f?'bg-white text-black':'bg-white/10'" class="rounded-full px-3 py-1 text-xs font-semibold">All</button><template x-for="e in ents"><button @click="f=e" :class="f===e?'bg-white text-black':'bg-white/10'" class="rounded-full px-3 py-1 font-mono text-xs" x-text="e"></button></template></div>
+   <p x-show="!ev.length" class="mt-6 text-sm text-white/45">Ask a question and the matching events appear here in order.</p>
+   <ol class="mt-5 space-y-4"><template x-for="e in ev"><li class="pop flex gap-3"><span class="mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full" :class="e.k==='b'?'bg-rose-400 shadow-[0_0_10px_#fb7185]':'bg-amber-400'"></span><div class="min-w-0"><div class="font-mono text-xs text-brand-300" x-text="tm(e)"></div><div class="text-sm font-semibold" x-text="e.s"></div><div class="text-sm text-white/65" x-text="e.x"></div><button @click="open(e.c)" class="mt-1 font-mono text-[11px] text-white/45 underline decoration-white/20 hover:text-brand-300" x-text="lbl(e.c)"></button></div></li></template></ol>
+  </aside>
+ </div>
+</section>
+
+<!-- BRIEF -->
+<section x-show="page==='brief'" x-cloak class="mx-auto max-w-6xl">
+ <div class="flex flex-wrap items-center justify-between gap-3"><h1 class="text-3xl font-extrabold tracking-tight">Incident brief</h1><div class="flex gap-2"><button @click="gap=true" class="min-h-[44px] rounded-xl border border-amber-400/40 px-4 text-sm font-semibold text-amber-200 hover:bg-amber-400/10">Check coverage gaps</button><button @click="copy()" class="min-h-[44px] rounded-xl bg-brand-400 px-5 text-sm font-bold text-brand-950 hover:bg-brand-300">Copy brief</button></div></div>
+ <div class="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
+  <button @click="open('03_severity_matrix|SEV-2')" class="rounded-2xl border border-rose-400/35 bg-rose-500/10 p-5 text-left transition hover:bg-rose-500/15"><div class="text-sm text-rose-200/80">Severity</div><div class="mt-2 text-4xl font-extrabold text-rose-300">High</div><div class="mt-2 font-mono text-[11px] text-rose-200/70">03_severity_matrix:SEV-2</div></button>
+  <div class="rounded-2xl glass p-5"><div class="text-sm text-white/55">Affected</div><div class="mt-2 text-4xl font-extrabold">2</div><div class="mt-2 text-xs text-white/50">WS-0117, j.alvarez</div></div>
+  <div class="rounded-2xl glass p-5"><div class="text-sm text-white/55">Seen between</div><div class="mt-2 font-mono text-lg font-semibold leading-tight">14:02:11<br>14:27:30</div><div class="mt-1 text-xs text-white/50">UTC, 12 Nov</div></div>
+  <button @click="open('05_change_calendar|none')" class="rounded-2xl glass p-5 text-left"><div class="text-sm text-white/55">Change window</div><div class="mt-2 text-2xl font-extrabold">No match</div><div class="mt-2 font-mono text-[11px] text-white/45">05_change_calendar</div></button>
+ </div>
+ <div class="mt-5 grid gap-5 lg:grid-cols-5">
+  <div class="space-y-5 lg:col-span-3">
+   <div class="rounded-2xl glass p-5"><h2 class="text-lg font-bold">Pinned findings</h2>
+    <div x-show="!pins.length" class="mt-3 rounded-xl border border-dashed border-white/15 p-5 text-sm text-white/55">Nothing pinned yet. <button @click="go('triage')" class="font-semibold text-brand-300 underline">Open triage</button> and select Add to incident.</div>
+    <ul class="mt-3 space-y-3"><template x-for="p in pins"><li class="pop rounded-xl bg-white/5 p-4"><div class="flex items-start justify-between gap-3"><div class="font-semibold" x-text="p.title"></div><button @click="pin(p)" class="h-5 w-5 shrink-0 text-white/40 hover:text-rose-300" aria-label="Remove finding" x-html="ic('x')"></button></div><div class="mt-2 flex flex-wrap gap-1.5"><template x-for="s in p.seg.filter(x=>x.c)"><button @click="open(s.c)" class="rounded-md border border-brand-400/25 bg-brand-400/10 px-1.5 py-0.5 font-mono text-[11px] text-brand-300" x-text="lbl(s.c)"></button></template></div></li></template></ul></div>
+   <div class="rounded-2xl glass p-5"><div class="flex items-center justify-between"><h2 class="text-lg font-bold">Scanning runbook</h2><span class="text-sm text-white/55"><b class="text-white" x-text="prog"></b> of 4 done</span></div>
+    <div class="mt-3 h-1.5 overflow-hidden rounded-full bg-white/10"><div class="h-full rounded-full bg-brand-400 transition-all" :style="'width:'+prog*25+'%'"></div></div>
+    <ul class="mt-4 space-y-2"><template x-for="s in ['S1','S2','S3','S4']"><li><label class="flex min-h-[48px] cursor-pointer items-center gap-3 rounded-xl bg-white/5 px-4 transition hover:bg-white/8"><input type="checkbox" x-model="done[s]" class="h-5 w-5 accent-brand-400"><span class="flex-1 text-sm" :class="done[s]?'text-white/40 line-through':''" x-text="'Step '+s.slice(1)+'. '+D_text(s)"></span><button type="button" @click.prevent="open('10_runbook_scanning|'+s)" class="font-mono text-[11px] text-white/45 hover:text-brand-300">10:<span x-text="s"></span></button></label></li></template></ul></div>
+  </div>
+  <aside class="rounded-2xl border border-white/10 bg-[#1b1e29] p-5 lg:col-span-2 lg:self-start"><h2 class="text-lg font-bold">Escalate to</h2><p class="mt-0.5 text-sm text-white/50">From file 04, for High severity</p>
+   <div class="mt-4 space-y-3"><template x-for="r in ['SOC-T2','SEC-MGR']"><button @click="open('04_escalation_contacts|'+r)" class="w-full rounded-xl glass p-4 text-left transition hover:border-brand-400/40"><div class="font-semibold" x-text="r==='SOC-T2'?'SOC Tier 2 on-call':'IT Security Manager'"></div><div class="mt-1 font-mono text-[11px] text-white/45" x-text="'04_escalation_contacts:'+r"></div></button></template></div></aside>
+ </div>
+</section>
+</main>
+</div>
+
+<!-- SOURCE DRAWER -->
+<div x-show="drawer" x-cloak class="fixed inset-0 z-40 flex justify-end bg-black/60" @click.self="drawer=null">
+ <div x-show="drawer" x-transition:enter="transition duration-200" x-transition:enter-start="translate-x-full" x-transition:enter-end="translate-x-0" class="h-full w-full max-w-md overflow-y-auto border-l border-white/10 bg-[#171a24] p-6" role="dialog" aria-label="Source viewer">
+  <template x-if="dv"><div>
+   <div class="flex items-start justify-between gap-3"><div><div class="text-sm text-white/50">Source</div><h2 class="break-all font-mono text-base font-semibold" x-text="dv.f"></h2><span x-show="dv.z" class="mt-2 inline-block rounded-md bg-indigo-400/15 px-2 py-0.5 font-mono text-xs text-indigo-300" x-text="'Clock: '+dv.z"></span></div><button @click="drawer=null" class="h-6 w-6 text-white/60 hover:text-white" aria-label="Close" x-html="ic('x')"></button></div>
+   <div x-show="dv.l" class="mt-5 overflow-x-auto rounded-xl bg-black/40 py-2 font-mono text-xs leading-7"><template x-for="(l,i) in (dv.l||[])"><div class="flex gap-3 whitespace-nowrap px-3" :class="dv.hi===i+1?'bg-brand-400/20 text-brand-100':'text-white/55'"><span class="w-6 shrink-0 text-right opacity-60" x-text="i+1"></span><span x-text="l"></span></div></template></div>
+   <div x-show="dv.row" class="mt-5 rounded-xl bg-black/40 p-4"><template x-for="(v,k) in (dv.row||{})"><div class="flex justify-between gap-4 border-b border-white/8 py-2 text-sm last:border-0"><span class="text-white/50" x-text="k"></span><span class="text-right font-medium" x-text="v"></span></div></template></div>
+   <p class="mt-4 text-xs text-white/40" x-text="dv.l?'Highlighted line is the cited evidence. Line 1 is the first log line.':'Highlighted row is the cited evidence.'"></p>
+  </div></template>
+ </div>
+</div>
+
+<!-- COVERAGE MODAL -->
+<div x-show="gap" x-cloak x-transition.opacity class="fixed inset-0 z-50 grid place-items-center bg-black/70 p-5" @click.self="gap=false">
+ <div class="w-full max-w-md rounded-2xl border border-amber-400/35 bg-[#13110a] p-6" role="dialog" aria-label="Coverage gap">
+  <div class="h-7 w-7 text-amber-300" x-html="ic('warn')"></div>
+  <h2 class="mt-3 text-xl font-bold">15_internal_fw.log has a gap</h2>
+  <p class="mt-2 text-sm leading-relaxed text-white/70">No lines exist for 14:00 to 15:00 UTC. That is a gap in coverage, not proof that nothing happened inside the network.</p>
+  <button @click="open('20_log_coverage|15_internal_fw');gap=false" class="mt-3 font-mono text-xs text-amber-300 underline">20_log_coverage:15_internal_fw</button>
+  <div class="mt-5 flex justify-end"><button @click="gap=false" class="min-h-[44px] rounded-xl bg-amber-300 px-5 text-sm font-bold text-amber-950">Got it</button></div>
+ </div>
+</div>
+
+<div x-show="toast" x-cloak x-transition class="fixed bottom-20 left-1/2 z-[60] -translate-x-1/2 rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-black shadow-xl md:bottom-8" x-text="toast"></div>
+<script>function D_text(s){return D['10_runbook_scanning'].r[s].text}</script>
+</body>
+</html>
