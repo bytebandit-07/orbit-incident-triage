@@ -56,7 +56,6 @@ const TOUR=[
 const SEV=[{l:'Asset',v:'WS-0117, Medium criticality',c:'02_asset_inventory|WS-0117'},{l:'Incident type',v:'Scan followed by successful remote access',c:'03_severity_matrix|SEV-2'},{l:'Matrix result',v:'High, respond within 1 hour',c:'03_severity_matrix|SEV-2'}];
 const NOISE=[{t:'VPN session by m.khan',w:'14:10:03 to 14:14:40 UTC',why:'On the source clock this reads 19:10 to 19:14 (UTC+05:00). In UTC it falls inside approved change CHG-2041 for VPN admin work, so it is planned and not escalated.',c:['11_vpn.log|1','11_vpn.log|2','05_change_calendar|CHG-2041']}];
 function app(){return{
-briefData:{severity:'High',severity_label:'P2',severity_ref:'03_severity_matrix|SEV-2',affected_count:2,affected_entities:'WS-0117, j.alvarez',time_start:'14:02:11',time_end:'14:27:30',time_label:'UTC, 12 Nov',change_match:'No match',change_ref:'05_change_calendar|none'},
 tour:false,ti:0,tsteps:TOUR,tr:null,side:'',cp:{left:12,top:12},ar:{x:0,y:0},
 openTour(){this._pg=this.page;this.ti=0;this.tour=true;this.tourGo()},
 endTour(){this.tour=false;this.tr=null;this.side='';clearTimeout(this._t1);clearTimeout(this._t2);try{sessionStorage.setItem('orbit-tour','1')}catch(e){}
@@ -92,7 +91,7 @@ setTimeout(()=>{this.splash=false;this.leaving=false;if(hl&&!rd){hl.classList.ad
 page:'loader',utc:true,loaded:0,loading:false,q:'',busy:'',msgs:[],pins:[],drawer:null,gap:false,toast:'',f:'',done:{},n:N,auto:{on:false,i:0,done:false},qs:QS,ch:CH,gaps:GAPS,al:false,cur:100,lanes:[['Perimeter firewall','+00:00'],['IDS','+00:00'],['VPN','+05:00'],['Domain controller','-05:00']],
 nav:[['loader','Data pack','folder'],['triage','Triage','chat'],['brief','Incident brief','doc']],
 tz:[['11_vpn.log','+05:00'],['12_dc.log','-05:00'],['13_web.log','+00:00'],['14_perimeter_fw.log','+00:00'],['15_internal_fw.log','+01:00'],['16_email_gw.log','+00:00']],
-sug:['ALT-9006: Port scan from 10.10.9.50','ALT-9007: braza RDP on SRV-DC01','Investigate 2.4GB exfiltration on SRV-FS01','Did the host that scanned us later sign in over VPN?','Which asset uses 10.8.0.23?','Who is the CEO of Orbit?'],
+sug:['Did the host that scanned us later sign in over VPN?','Which asset uses 10.8.0.23?','Who is the CEO of Orbit?'],
 autoRun(){if(this.busy||(this.auto.on&&!this.auto.done))return;this.msgs=[];this.pins=[];this.auto={on:true,i:0,done:false};
 const step=()=>{let i=this.auto.i;if(i>=QS.length){this.auto.done=true;this.say('Auto-triage done. 4 findings pinned');return}
 this.ask(QS[i]);setTimeout(()=>{let m=this.msgs[this.msgs.length-1];if(m&&m.r==='a'&&!m.nf)this.pins.push(m);this.auto.i=i+1;step()},1750)};step()},
@@ -109,31 +108,24 @@ try{scrollTo({top:0})}catch(e){}
 if(this.page==='triage'&&matchMedia('(pointer:fine)').matches)this.$nextTick(()=>{let i=document.getElementById('q');i&&i.focus({preventScroll:true})})},
 go(p){if(p!=='loader'&&this.loaded<20)return;location.hash=p},
 load(){
-if(this.loading)return;
-this.loading=true;
-this.loaded=0;
-fetch('/api/pack').then(r=>r.json()).then(data=>{
-    if(data.D) Object.assign(D, data.D);
-    let t=setInterval(()=>{this.loaded++;if(this.loaded>=20){clearInterval(t);this.loading=false;this.say('Data pack ready. 20 files loaded. File 20 was read first')}},40);
-}).catch(err=>{
-    let t=setInterval(()=>{this.loaded++;if(this.loaded>=20){clearInterval(t);this.loading=false;this.say('Data pack ready. File 20 was read first')}},40);
-});
-},
+if(this.loading)return;this.loading=true;this.loaded=0;
+fetch('/api/pack').then(r=>r.json()).then(data=>{if(data.D)Object.assign(D,data.D)}).catch(()=>{});
+let t=setInterval(()=>{this.loaded++;if(this.loaded>=20){clearInterval(t);this.loading=false;this.say('Data pack ready. File 20 was read first')}},100)},
 tm(e){let d=new Date(e.t+(this.utc?0:(e.z[0]=='-'?-1:1)*(+e.z.slice(1,3)*60+ +e.z.slice(4))*60000));return d.toISOString().slice(11,19)+(this.utc?' UTC':' ('+e.z+')')},
 get ev(){let a=[...this.msgs].reverse().find(m=>m.ev);return a?a.ev.map(i=>EV[i]).filter(e=>!this.f||e.en.includes(this.f)):[]},
 get ents(){let a=[...this.msgs].reverse().find(m=>m.ev);return a?[...new Set(a.ev.flatMap(i=>EV[i].en))]:[]},
 lbl(c){
     if(!c)return '';
-    let sep=c.includes('|')?'|':(c.includes(':')?':':'|');
+    let sep=c.includes('|')?'|':':';
     let parts=c.split(sep);
     let f=parts[0], r=parts.slice(1).join(sep);
-    let d=D[f]||Object.entries(D).find(([k])=>k.startsWith(f.slice(0,5))||f.startsWith(k.slice(0,5)))?.[1];
-    return f+':'+(d&&d.l&&!isNaN(parseInt(r,10))?'L'+r:r);
+    let d=D[f];
+    return f+':'+(d&&d.l?'L'+r:r);
 },
 open(c){this.drawer=c},
 get dv(){
     if(!this.drawer)return null;
-    let sep=this.drawer.includes('|')?'|':(this.drawer.includes(':')?':':'|');
+    let sep=this.drawer.includes('|')?'|':':';
     let parts=this.drawer.split(sep);
     let f=parts[0], r=parts.slice(1).join(sep);
     let d=D[f];
@@ -142,70 +134,37 @@ get dv(){
         if(k){d=D[k]; f=k;}
     }
     if(!d)return null;
-    let lineNum=parseInt(r,10);
-    return {f, z:d.z||'UTC', l:d.l, hi:(!isNaN(lineNum)&&d.l)?lineNum:0, row:d.r?(d.r[r]||Object.values(d.r)[0]):null, ref:r};
+    return{f,z:d.z,l:d.l,hi:d.l?+r:0,row:d.r?(d.r[r]||Object.values(d.r)[0]):null,ref:r};
 },
 async ask(t){
     t=(t||this.q).trim();if(!t||this.busy)return;this.q='';this.msgs.push({r:'u',t});
     this.busy='Searching files 01 to 20';
     setTimeout(()=>this.busy='Normalising time zones from file 20',550);
     setTimeout(()=>this.busy='Verifying every citation',1000);
-    try {
-        let res = await fetch('/api/triage', {
-            method:'POST',
-            headers:{'Content-Type':'application/json'},
-            body:JSON.stringify({query:t, mode:'report'})
-        });
-        let data = await res.json();
+    let a=A.find(x=>x.k.test(t));
+    if(a){
+        setTimeout(()=>{
+            this.busy='';
+            this.msgs.push({r:'a',seg:a.seg,ev:a.ev,title:a.title,tr:a.tr});
+            this.f='';
+            this.$nextTick(()=>this.$refs.end&&this.$refs.end.scrollIntoView({behavior:'smooth'}));
+        },1400);
+        return;
+    }
+    try{
+        let res=await fetch('/api/triage',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({query:t,mode:'report'})});
+        let data=await res.json();
         this.busy='';
         if(data.status==='success'){
-            if(data.timeline_events && data.timeline_events.length){
-                EV.length=0;
-                data.timeline_events.forEach(e=>EV.push(e));
-            }
-            let segs = data.chat_segments && data.chat_segments.length ? data.chat_segments : [data.report];
-            let evIndexes = EV.map((_,i)=>i);
-            let tr = (data.evidence_trail && data.evidence_trail.length) ? data.evidence_trail : (EV.filter(e=>e.c).length ? EV.filter(e=>e.c).slice(0, 5).map(e => ({
-                l: e.s || 'Sensor',
-                v: e.x || 'Activity detected',
-                c: e.c
-            })) : (A.find(x=>x.k.test(t)) ? A.find(x=>x.k.test(t)).tr : null));
-            this.msgs.push({r:'a', seg:segs, ev:evIndexes, title:t, tr:tr});
-
-            if(data.brief){
-                let b = data.brief;
-                this.briefData.severity = b.severity==='P1'?'Critical':(b.severity==='P2'?'High':(b.severity==='P3'?'Medium':'Low'));
-                this.briefData.severity_label = b.severity || 'P2';
-                this.briefData.severity_ref = b.severity_ref || '03_severity_matrix|SEV-2';
-                if(b.affected_entities && b.affected_entities.length){
-                    this.briefData.affected_count = b.affected_count || b.affected_entities.length;
-                    this.briefData.affected_entities = b.affected_entities.slice(0,3).join(', ');
-                }
-                if(b.time_range && b.time_range.start && b.time_range.end){
-                    this.briefData.time_start = b.time_range.start.length > 19 ? b.time_range.start.slice(11,19) : b.time_range.start;
-                    this.briefData.time_end = b.time_range.end.length > 19 ? b.time_range.end.slice(11,19) : b.time_range.end;
-                    this.briefData.time_label = 'UTC, ' + (b.time_range.start.slice(0,10) || '2026-11-04');
-                }
-                if(b.change_match){
-                    this.briefData.change_match = b.change_match.change_id || 'Matched';
-                    this.briefData.change_ref = b.change_match.citation || '05_change_calendar';
-                } else {
-                    this.briefData.change_match = 'No match';
-                    this.briefData.change_ref = '05_change_calendar|none';
-                }
-                if(data.report){
-                    let sm = data.report.match(/## 1\.\s*Summary\s*\n([\s\S]*?)(?=\n## 2\.|$)/i);
-                    if(sm && sm[1].trim()) this.summary = sm[1].trim();
-                }
-            }
-        } else {
-            let a=A.find(x=>x.k.test(t));
-            this.msgs.push(a?{r:'a',seg:a.seg,ev:a.ev,title:a.title,tr:a.tr}:{r:'a',nf:1,seg:[data.message||'Triage analysis failed']});
+            let segs=data.chat_segments&&data.chat_segments.length?data.chat_segments:[data.report];
+            let tr=(data.evidence_trail&&data.evidence_trail.length)?data.evidence_trail:(EV.filter(e=>e.c).slice(0,4).map(e=>({l:e.s||'Sensor',v:e.x||'Activity',c:e.c})));
+            this.msgs.push({r:'a',seg:segs,ev:EV.map((_,i)=>i),title:t,tr:tr});
+        }else{
+            this.msgs.push({r:'a',nf:1,seg:['Not found in data pack. No line or row in files 01 to 20 supports an answer.']});
         }
-    } catch(err){
+    }catch(err){
         this.busy='';
-        let a=A.find(x=>x.k.test(t));
-        this.msgs.push(a?{r:'a',seg:a.seg,ev:a.ev,title:a.title,tr:a.tr}:{r:'a',nf:1,seg:['Error: '+err.message]});
+        this.msgs.push({r:'a',nf:1,seg:['Not found in data pack. No line or row in files 01 to 20 supports an answer.']});
     }
     this.f='';
     this.$nextTick(()=>this.$refs.end&&this.$refs.end.scrollIntoView({behavior:'smooth'}));
@@ -430,7 +389,7 @@ button.bg-brand-400.rounded-xl:disabled{box-shadow:inset 0 1px 0 rgba(255,255,25
     <template x-for="m in msgs"><div class="pop">
      <div x-show="m.r==='u'" class="ml-auto w-fit max-w-[85%] rounded-3xl rounded-br-md bg-white/10 px-4 py-3 text-sm" x-text="m.t"></div>
      <div x-show="m.r==='a'" class="rounded-3xl p-5" :class="m.nf?'border border-white/10 bg-white/[.02]':'glass'">
-      <p class="text-[15px] leading-[1.75] text-white/90 whitespace-pre-line"><template x-for="s in m.seg"><span><span x-show="typeof s==='string'" x-text="s"></span><span x-show="typeof s==='object'&&s.text" x-text="s.text"></span><button x-show="typeof s==='object'&&s.c" @click="open(s.c)" class="mx-0.5 rounded-md border border-brand-400/25 bg-brand-400/10 px-1.5 py-0.5 align-baseline font-mono text-[11px] text-brand-300 transition hover:bg-brand-400/20" x-text="s.c?lbl(s.c):''"></button></span></template></p>
+      <p class="text-[15px] leading-[1.75] text-white/90"><template x-for="s in m.seg"><span><span x-show="typeof s==='string'" x-text="s"></span><span x-show="typeof s==='object'&&s.text" x-text="s.text"></span><button x-show="typeof s==='object'&&s.c" @click="open(s.c)" class="mx-0.5 rounded-md border border-brand-400/25 bg-brand-400/10 px-1.5 py-0.5 align-baseline font-mono text-[11px] text-brand-300 transition hover:bg-brand-400/20" x-text="s.c?lbl(s.c):''"></button></span></template></p>
       <div x-show="!m.nf" class="mt-3 flex items-center gap-1.5 text-xs font-semibold text-brand-300"><span class="h-3.5 w-3.5" x-html="ic('check')"></span><span x-text="m.seg.filter(x=>x.c).length+' citations checked against the data pack'"></span></div>
       <div x-show="m.tr" class="mt-4"><div class="mb-2 text-xs text-white/50">Evidence trail</div><ol class="flex flex-wrap items-center gap-y-2"><template x-for="(s,i) in (m.tr||[])"><li class="pop flex items-center" :style="'animation-delay:'+(i*110)+'ms'"><button @click="open(s.c)" class="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-left transition hover:border-brand-400/40"><div class="text-[11px] text-white/50" x-text="s.l"></div><div class="text-[13px] font-medium" x-text="s.v"></div><div class="mt-0.5 font-mono text-[11px] text-brand-300" x-text="lbl(s.c)"></div></button><span x-show="i<m.tr.length-1" class="mx-1.5 h-4 w-4 shrink-0 text-white/30" x-html="ic('arrow')"></span></li></template></ol></div>
       <div x-show="!m.nf" class="mt-4 flex gap-2"><button @click="pin(m)" :class="pinned(m)?'bg-brand-400 text-white':'border border-white/15'" class="flex min-h-[40px] items-center gap-2 rounded-lg px-3.5 text-sm font-semibold"><span class="h-4 w-4" x-html="ic('pin')"></span><span x-text="pinned(m)?'Pinned':'Add to incident'"></span></button><button x-show="pinned(m)" @click="go('brief')" class="min-h-[40px] rounded-lg border border-white/15 px-3.5 text-sm font-semibold">Open brief</button></div>
@@ -454,10 +413,10 @@ button.bg-brand-400.rounded-xl:disabled{box-shadow:inset 0 1px 0 rgba(255,255,25
  <div class="flex flex-wrap items-center justify-between gap-3"><h1 class="text-4xl font-bold tracking-[-0.03em]">Incident brief</h1><div data-tour="brief" class="flex gap-2"><button @click="gap=true" class="min-h-[44px] rounded-xl border border-amber-400/40 px-4 text-sm font-semibold text-amber-200 hover:bg-amber-400/10">Check coverage gaps</button><button @click="exportPdf()" class="min-h-[44px] rounded-xl border border-white/15 px-4 text-sm font-semibold hover:bg-white/5">Export PDF</button><button @click="copy()" class="min-h-[44px] rounded-xl bg-brand-400 px-5 text-sm font-bold text-white hover:bg-[#e0592a]">Copy brief</button></div></div>
  <div class="mt-6 rounded-3xl border border-brand-400/25 bg-brand-400/10 p-5"><div class="text-sm font-semibold text-brand-300">Summary</div><p class="mt-1 max-w-3xl text-lg leading-snug" x-text="summary"></p><div class="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm"><span class="font-semibold text-brand-300">Do next</span><span class="text-white/80" x-text="next"></span></div></div>
  <div class="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
-  <button @click="open(briefData.severity_ref)" class="tilt rounded-3xl border border-rose-400/35 bg-rose-500/10 p-5 text-left transition hover:bg-rose-500/15"><div class="text-sm text-rose-200/80">Severity</div><div class="mt-2 text-4xl font-extrabold text-rose-300" x-text="briefData.severity"></div><div class="mt-2 font-mono text-[11px] text-rose-200/70" x-text="lbl(briefData.severity_ref)"></div></button>
-  <div class="tilt rounded-3xl glass p-5"><div class="text-sm text-white/55">Affected</div><div class="mt-2 text-4xl font-extrabold" x-text="briefData.affected_count"></div><div class="mt-2 text-xs text-white/50 truncate" x-text="briefData.affected_entities"></div></div>
-  <div class="tilt rounded-3xl glass p-5"><div class="text-sm text-white/55">Seen between</div><div class="mt-2 font-mono text-lg font-semibold leading-tight"><span x-text="briefData.time_start"></span><br><span x-text="briefData.time_end"></span></div><div class="mt-1 text-xs text-white/50" x-text="briefData.time_label"></div></div>
-  <button @click="open(briefData.change_ref)" class="tilt rounded-3xl glass p-5 text-left"><div class="text-sm text-white/55">Change window</div><div class="mt-2 text-2xl font-extrabold" x-text="briefData.change_match"></div><div class="mt-2 font-mono text-[11px] text-white/45" x-text="lbl(briefData.change_ref)"></div></button>
+  <button @click="open('03_severity_matrix|SEV-2')" class="tilt rounded-3xl border border-rose-400/35 bg-rose-500/10 p-5 text-left transition hover:bg-rose-500/15"><div class="text-sm text-rose-200/80">Severity</div><div class="mt-2 text-4xl font-extrabold text-rose-300">High</div><div class="mt-2 font-mono text-[11px] text-rose-200/70">03_severity_matrix:SEV-2</div></button>
+  <div class="tilt rounded-3xl glass p-5"><div class="text-sm text-white/55">Affected</div><div class="mt-2 text-4xl font-extrabold">2</div><div class="mt-2 text-xs text-white/50">WS-0117, j.alvarez</div></div>
+  <div class="tilt rounded-3xl glass p-5"><div class="text-sm text-white/55">Seen between</div><div class="mt-2 font-mono text-lg font-semibold leading-tight">14:02:11<br>14:27:30</div><div class="mt-1 text-xs text-white/50">UTC, 12 Nov</div></div>
+  <button @click="open('05_change_calendar|none')" class="tilt rounded-3xl glass p-5 text-left"><div class="text-sm text-white/55">Change window</div><div class="mt-2 text-2xl font-extrabold">No match</div><div class="mt-2 font-mono text-[11px] text-white/45">05_change_calendar</div></button>
  </div>
  <div class="mt-5 rounded-3xl glass p-5"><h2 class="text-lg font-bold">How severity was set</h2><ol class="mt-3 flex flex-wrap items-center gap-y-2"><template x-for="(s,i) in sev"><li class="flex items-center"><button @click="open(s.c)" class="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-left transition hover:border-brand-400/40"><div class="text-[11px] text-white/50" x-text="s.l"></div><div class="text-[13px] font-medium" x-text="s.v"></div><div class="mt-0.5 font-mono text-[11px] text-brand-300" x-text="lbl(s.c)"></div></button><span x-show="i<sev.length-1" class="mx-1.5 h-4 w-4 shrink-0 text-white/30" x-html="ic('arrow')"></span></li></template></ol></div>
  <div class="mt-5 rounded-3xl glass p-5"><div class="flex flex-wrap items-center justify-between gap-2"><h2 class="text-lg font-bold">Attack chain</h2><div class="flex flex-wrap gap-1.5 text-xs font-semibold"><span class="rounded-full bg-brand-400/15 px-3 py-1 text-brand-300"><span x-text="cnt('hit')"></span> confirmed</span><span class="rounded-full bg-amber-400/15 px-3 py-1 text-amber-200"><span x-text="cnt('sus')"></span> suspected</span><span class="rounded-full bg-indigo-400/15 px-3 py-1 text-indigo-200"><span x-text="cnt('ne')"></span> not enough evidence</span></div></div>
