@@ -145,18 +145,18 @@ def extract_citations(text: str) -> List[str]:
     return _dedupe([_clean_citation(m.group(0)) for m in CITATION_RE.finditer(text or "")])
 
 
-def split_text_into_segments(text: str) -> List[dict]:
-    """Fallback: convert prose with inline citations into [{text},{c},...]."""
-    segs: List[dict] = []
+def split_text_into_segments(text: str) -> List[Any]:
+    """Fallback: convert prose with inline citations into [str, {c: ...}, ...]."""
+    segs: List[Any] = []
     pos = 0
     for m in CITATION_RE.finditer(text or ""):
         if m.start() > pos:
-            segs.append({"text": text[pos:m.start()]})
+            segs.append(text[pos:m.start()])
         segs.append({"c": _clean_citation(m.group(0))})
         pos = m.end()
     if pos < len(text or ""):
-        segs.append({"text": text[pos:]})
-    return [s for s in segs if s.get("text", "x") != ""]
+        segs.append(text[pos:])
+    return [s for s in segs if s != ""]
 
 
 # --------------------------------------------------------------------------- #
@@ -288,16 +288,18 @@ def normalize_brief(brief: Any) -> dict:
     return b
 
 
-def normalize_chat_segments(segments: Any, fallback_text: str) -> List[dict]:
-    out: List[dict] = []
+def normalize_chat_segments(segments: Any, fallback_text: str) -> List[Any]:
+    out: List[Any] = []
     if isinstance(segments, list):
         for seg in segments:
-            if not isinstance(seg, dict):
-                continue
-            if "c" in seg and seg["c"]:
-                out.append({"c": _clean_citation(str(seg["c"]))})
-            elif "text" in seg:
-                out.append({"text": str(seg["text"])})
+            if isinstance(seg, str):
+                if seg:
+                    out.append(seg)
+            elif isinstance(seg, dict):
+                if "c" in seg and seg["c"]:
+                    out.append({"c": _clean_citation(str(seg["c"]))})
+                elif "text" in seg and seg["text"]:
+                    out.append(str(seg["text"]))
     return out or split_text_into_segments(fallback_text)
 
 
@@ -420,7 +422,7 @@ def _retry_after_seconds(exc: BaseException) -> Optional[float]:
 
 
 _DEFAULT_MODELS = {
-    "gemini": "gemini-3.5-flash",
+    "gemini": "gemini-3.5-flash-lite",
     "groq": "llama-3.3-70b-versatile",
     "openai": "gpt-4o-mini",
 }
@@ -909,8 +911,8 @@ class TriageEngine:
                                      "verdict": "harmless", "alerts": list(pre["matches"])}
         segments = normalize_chat_segments(structured.get("chat_segments"), report)
 
-        struct_cits = [e["c"] for e in events if e["c"]]
-        struct_cits += [s["c"] for s in segments if "c" in s]
+        struct_cits = [e["c"] for e in events if isinstance(e, dict) and e.get("c")]
+        struct_cits += [s["c"] for s in segments if isinstance(s, dict) and s.get("c")]
         struct_cits += [c for c in brief.get("runbook_steps", []) if isinstance(c, str) and CITATION_RE.search(c)]
         for contact in brief.get("escalation_contacts", []):
             if isinstance(contact, dict) and contact.get("citation"):
@@ -949,7 +951,7 @@ class TriageEngine:
             report = re.sub(rf"(?<!\S)`?{re.escape(cit)}`?(?! ⚠️)", f"`{cit}` ⚠️UNVERIFIED", report)
         result.markdown_report = report
         for seg in result.chat_segments:
-            if seg.get("c") in invalid:
+            if isinstance(seg, dict) and seg.get("c") in invalid:
                 seg["valid"] = False
         for ev in result.timeline_events:
             if ev.get("c") in invalid:
