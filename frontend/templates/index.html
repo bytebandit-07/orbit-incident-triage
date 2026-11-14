@@ -159,7 +159,12 @@ async ask(t){
             }
             let segs = data.chat_segments && data.chat_segments.length ? data.chat_segments : [data.report];
             let evIndexes = EV.map((_,i)=>i);
-            this.msgs.push({r:'a', seg:segs, ev:evIndexes, title:t});
+            let tr = (data.evidence_trail && data.evidence_trail.length) ? data.evidence_trail : (EV.filter(e=>e.c).length ? EV.filter(e=>e.c).slice(0, 5).map(e => ({
+                l: e.s || 'Sensor',
+                v: e.x || 'Activity detected',
+                c: e.c
+            })) : (A.find(x=>x.k.test(t)) ? A.find(x=>x.k.test(t)).tr : null));
+            this.msgs.push({r:'a', seg:segs, ev:evIndexes, title:t, tr:tr});
         } else {
             let a=A.find(x=>x.k.test(t));
             this.msgs.push(a?{r:'a',seg:a.seg,ev:a.ev,title:a.title,tr:a.tr}:{r:'a',nf:1,seg:[data.message||'Triage analysis failed']});

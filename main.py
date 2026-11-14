@@ -136,10 +136,18 @@ async def run_triage(req: TriageRequest):
 
     try:
         result = await engine.analyze_async(query=req.query, mode=req.mode or "report")
+        
+        trail = [
+            {"l": e.get("s", "Sensor"), "v": e.get("x", "Activity"), "c": e.get("c", "")}
+            for e in (result.timeline_events or [])
+            if isinstance(e, dict) and e.get("c")
+        ][:5]
+
         return {
             "status": "success",
             "report": result.markdown_report,
             "timeline_events": result.timeline_events,
+            "evidence_trail": trail,
             "brief": result.brief,
             "chat_segments": result.chat_segments,
             "citation_checks": result.citation_checks,
