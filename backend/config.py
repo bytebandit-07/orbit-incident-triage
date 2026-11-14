@@ -229,7 +229,7 @@ ID_PATTERNS: Dict[str, re.Pattern] = {
 SUPPORTED_PROVIDERS: Tuple[str, ...] = ("gemini", "groq", "openai")
 
 DEFAULT_MODELS: Dict[str, str] = {
-    "gemini": "gemini-2.5-flash",
+    "gemini": "gemini-3.5-flash",
     "groq": "llama-3.3-70b-versatile",
     "openai": "gpt-4o-mini",
 }
