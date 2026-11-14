@@ -19,7 +19,7 @@ load_dotenv()
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
@@ -61,6 +61,18 @@ class TriageRequest(BaseModel):
     query: str
     mode: Optional[str] = "report"
     api_key: Optional[str] = None
+
+
+@app.get("/favicon.ico", include_in_schema=False)
+async def serve_favicon():
+    """Serve the customized Orbit SOC logo favicon."""
+    fav = STATIC_DIR / "favicon.ico"
+    if fav.exists():
+        return FileResponse(fav)
+    fav_svg = STATIC_DIR / "favicon.svg"
+    if fav_svg.exists():
+        return FileResponse(fav_svg, media_type="image/svg+xml")
+    raise HTTPException(status_code=404, detail="Favicon not found")
 
 
 @app.get("/", response_class=HTMLResponse)
