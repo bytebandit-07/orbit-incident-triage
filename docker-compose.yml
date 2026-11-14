@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  orbit-triage:
+    build: .
+    container_name: orbit-incident-triage
+    ports:
+      - "8000:8000"
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - LLM_MODEL=${LLM_MODEL:-gemini-3.5-flash}
+      - TRIAGE_DATA_DIR=/app/problem_c_data
+    env_file:
+      - .env
+    restart: unless-stopped

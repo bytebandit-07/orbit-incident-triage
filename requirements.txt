@@ -1,6 +1,8 @@
-fastapi
-uvicorn
-jinja2
-google-genai
-python-dotenv
-pandas
+fastapi>=0.110.0
+uvicorn>=0.28.0
+jinja2>=3.1.3
+google-genai>=0.1.1
+python-dotenv>=1.0.1
+pandas>=2.2.0
+httpx>=0.27.0
+pytest>=8.0.0
