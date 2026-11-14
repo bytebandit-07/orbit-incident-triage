@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Orbit Triage – Security Incident Assistant</title>
 <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="/static/favicon.png">
 <link rel="alternate icon" type="image/x-icon" href="/favicon.ico">
 <link rel="apple-touch-icon" href="/static/favicon.png">
 <script src="https://cdn.tailwindcss.com/3.4.17"></script>
@@ -81,12 +82,13 @@ this.side=side;this.cp=cp;if(ar)this.ar=ar},
 spotS(){let t=this.tr;return t?'left:'+t.x+'px;top:'+t.y+'px;width:'+t.w+'px;height:'+t.h+'px':''},
 cardS(){return 'left:'+this.cp.left+'px;top:'+this.cp.top+'px'},
 arS(){return 'left:'+this.ar.x+'px;top:'+this.ar.y+'px'},
-splash:true,ready:false,gi:0,gr:['hello','hola','bonjour','ciao','hallo'],
+splash:true,leaving:false,ready:false,
 splashInit(){try{if(sessionStorage.getItem('orbit-splash')){this.splash=false;return}}catch(e){}
-setTimeout(()=>{this.ready=true;this.$nextTick(()=>this.$refs.go&&this.$refs.go.focus({preventScroll:true}))},2800);
-this._g=setInterval(()=>{this.gi=(this.gi+1)%this.gr.length},3000)},
-closeSplash(){if(!this.splash)return;clearInterval(this._g);this.splash=false;let seen=false;try{sessionStorage.setItem('orbit-splash','1');seen=!!sessionStorage.getItem('orbit-tour')}catch(e){}
-if(!seen)setTimeout(()=>this.openTour(),600)},
+setTimeout(()=>{this.ready=true;this.$nextTick(()=>this.$refs.go&&this.$refs.go.focus({preventScroll:true}))},2000)},
+closeSplash(){if(!this.splash||this.leaving)return;this.leaving=true;let seen=false;try{sessionStorage.setItem('orbit-splash','1');seen=!!sessionStorage.getItem('orbit-tour')}catch(e){}
+let rd=matchMedia('(prefers-reduced-motion:reduce)').matches,hl=document.querySelector('.hlogo'),lg=this.$refs.slogo;
+if(!rd&&hl&&lg){let a=lg.getBoundingClientRect(),b=hl.getBoundingClientRect();if(a.width&&b.width)lg.animate([{transform:'none'},{transform:'translate('+(b.left+b.width/2-a.left-a.width/2)+'px,'+(b.top+b.height/2-a.top-a.height/2)+'px) scale('+b.width/a.width+')'}],{duration:950,delay:80,easing:'cubic-bezier(.76,0,.24,1)',fill:'forwards'})}
+setTimeout(()=>{this.splash=false;this.leaving=false;if(hl&&!rd){hl.classList.add('hl-land');setTimeout(()=>hl.classList.remove('hl-land'),900)}if(!seen)setTimeout(()=>this.openTour(),500)},rd?200:1050)},
 page:'loader',utc:true,loaded:0,loading:false,q:'',busy:'',msgs:[],pins:[],drawer:null,gap:false,toast:'',f:'',done:{},n:N,auto:{on:false,i:0,done:false},qs:QS,ch:CH,gaps:GAPS,al:false,cur:100,lanes:[['Perimeter firewall','+00:00'],['IDS','+00:00'],['VPN','+05:00'],['Domain controller','-05:00']],
 nav:[['loader','Data pack','folder'],['triage','Triage','chat'],['brief','Incident brief','doc']],
 tz:[['11_vpn.log','+05:00'],['12_dc.log','-05:00'],['13_web.log','+00:00'],['14_perimeter_fw.log','+00:00'],['15_internal_fw.log','+01:00'],['16_email_gw.log','+00:00']],
@@ -163,6 +165,13 @@ async ask(t){
             }
             let segs = data.chat_segments && data.chat_segments.length ? data.chat_segments : [data.report];
             let evIndexes = EV.map((_,i)=>i);
+            let tr = (data.evidence_trail && data.evidence_trail.length) ? data.evidence_trail : (EV.filter(e=>e.c).length ? EV.filter(e=>e.c).slice(0, 5).map(e => ({
+                l: e.s || 'Sensor',
+                v: e.x || 'Activity detected',
+                c: e.c
+            })) : (A.find(x=>x.k.test(t)) ? A.find(x=>x.k.test(t)).tr : null));
+            this.msgs.push({r:'a', seg:segs, ev:evIndexes, title:t, tr:tr});
+
             if(data.brief){
                 let b = data.brief;
                 this.briefData.severity = b.severity==='P1'?'Critical':(b.severity==='P2'?'High':(b.severity==='P3'?'Medium':'Low'));
@@ -189,12 +198,6 @@ async ask(t){
                     if(sm && sm[1].trim()) this.summary = sm[1].trim();
                 }
             }
-            let tr = (data.evidence_trail && data.evidence_trail.length) ? data.evidence_trail : (EV.filter(e=>e.c).length ? EV.filter(e=>e.c).slice(0, 5).map(e => ({
-                l: e.s || 'Sensor',
-                v: e.x || 'Activity detected',
-                c: e.c
-            })) : (A.find(x=>x.k.test(t)) ? A.find(x=>x.k.test(t)).tr : null));
-            this.msgs.push({r:'a', seg:segs, ev:evIndexes, title:t, tr:tr});
         } else {
             let a=A.find(x=>x.k.test(t));
             this.msgs.push(a?{r:'a',seg:a.seg,ev:a.ev,title:a.title,tr:a.tr}:{r:'a',nf:1,seg:[data.message||'Triage analysis failed']});
@@ -264,7 +267,38 @@ button.bg-brand-400{background-image:linear-gradient(180deg,rgba(255,255,255,.14
 .ln{width:167px;height:2px;margin-top:-1px;transform-origin:0 50%;background:rgba(255,255,255,.12);transition:all .6s}.ln.lit{background:linear-gradient(90deg,#cf4a1c,rgba(143,42,11,.2));box-shadow:0 0 14px rgba(207,74,28,.75)}
 @media (max-width:640px){.world{scale:.78}.scene{height:320px}}
 @media (prefers-reduced-motion:reduce){.d3,.ring{animation:none}.tilt,.dk{transition:none}}
-.splash{background:radial-gradient(700px 420px at 50% 42%,rgba(207,74,28,.16),transparent),radial-gradient(520px 320px at 10% 110%,rgba(120,110,255,.08),transparent),#0b0c11}
+.sp-bg{position:absolute;inset:0;background:radial-gradient(700px 460px at 50% 38%,rgba(207,74,28,.2),transparent),radial-gradient(520px 320px at 10% 110%,rgba(120,110,255,.08),transparent),#0b0c11;transition:opacity .75s ease .3s}
+.sp-stage{position:relative;display:grid;place-items:center;width:240px;height:240px}
+.sp-amb{position:absolute;inset:0;transition:opacity .35s ease}
+.sp-glow{position:absolute;inset:-12%;border-radius:50%;background:radial-gradient(circle,rgba(207,74,28,.42),transparent 62%);animation:glowIn 1.6s ease .2s both,glowBreath 4.5s ease-in-out 1.8s infinite}
+@keyframes glowIn{from{opacity:0;transform:scale(.6)}to{opacity:1;transform:none}}
+@keyframes glowBreath{50%{opacity:.6;transform:scale(1.06)}}
+.sp-pulse{position:absolute;inset:26%;border-radius:50%;border:1px solid rgba(238,122,77,.55);opacity:0;animation:spPulse 4.2s cubic-bezier(.2,.6,.3,1) var(--d,1.6s) infinite}
+@keyframes spPulse{0%{transform:scale(.8);opacity:.75}100%{transform:scale(1.9);opacity:0}}
+.sp-orbit{position:absolute;inset:0;width:100%;height:100%;opacity:0;animation:orbIn 1.2s ease 1s forwards,cspin 36s linear 1s infinite}
+@keyframes orbIn{to{opacity:1}}
+.logo-fly{position:relative;z-index:2;filter:drop-shadow(0 16px 36px rgba(207,74,28,.5));will-change:transform}
+.logo-in{display:block;animation:lgIn 1.2s cubic-bezier(.2,1.1,.3,1) .1s both}
+@keyframes lgIn{0%{opacity:0;transform:scale(.5) rotate(-10deg);filter:blur(16px)}55%{filter:blur(0)}100%{opacity:1;transform:none;filter:blur(0)}}
+@keyframes lgDraw{0%{stroke-dashoffset:1;opacity:0}6%{opacity:1}100%{stroke-dashoffset:0;opacity:1}}
+@keyframes lgFade{from{opacity:0}to{opacity:1}}
+.lg-line{stroke-dasharray:1 1;animation:lgDraw 1s cubic-bezier(.6,.1,.3,1) .4s both}
+.lg-fill{animation:lgFade .7s ease 1s both}
+.lg-ring{stroke-dasharray:1 1;animation:lgDraw 1.2s cubic-bezier(.6,.1,.3,1) .75s both}
+.lg-dot{animation:lgFade .4s ease 1.55s both}
+@keyframes stIn{from{opacity:0;transform:translateY(14px);filter:blur(6px)}to{opacity:1;transform:none;filter:blur(0)}}
+.st{animation:stIn .9s cubic-bezier(.2,.8,.2,1) var(--d,0s) both}
+@keyframes nameIn{from{opacity:0;letter-spacing:.3em;filter:blur(8px)}to{opacity:1;letter-spacing:-.025em;filter:blur(0)}}
+.sp-name{animation:nameIn 1.2s cubic-bezier(.2,.8,.2,1) both;background:linear-gradient(180deg,#fff 30%,#ffc9b0);-webkit-background-clip:text;background-clip:text;color:transparent}
+.sp-body{transition:opacity .4s ease,transform .5s ease,filter .4s ease}
+.splash.leaving{pointer-events:none}
+.splash.leaving .sp-bg{opacity:0}
+.splash.leaving .sp-amb{opacity:0}
+.splash.leaving .sp-body{opacity:0;transform:translateY(-14px) scale(.98);filter:blur(8px)}
+.sp-on .hlogo{opacity:0}
+@keyframes hlLand{0%{transform:scale(1.35);filter:drop-shadow(0 0 0 rgba(207,74,28,0))}45%{filter:drop-shadow(0 0 16px rgba(232,102,58,.95))}100%{transform:none;filter:drop-shadow(0 0 0 rgba(207,74,28,0))}}
+.hl-land{animation:hlLand .8s cubic-bezier(.2,.8,.2,1)}
+@media (prefers-reduced-motion:reduce){.logo-in,.lg-line,.lg-fill,.lg-ring,.lg-dot,.st,.sp-name,.sp-glow,.sp-pulse,.sp-orbit,.hl-land{animation:none!important;opacity:1}.lg-line,.lg-ring{stroke-dashoffset:0}.sp-pulse{display:none}.sp-bg,.sp-body{transition:none}}
 .hello{font-family:'Great Vibes','Brush Script MT',cursive;font-size:176px;fill:transparent;stroke:#ee7a4d;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:1000;stroke-dashoffset:1000;animation:draw 2.1s cubic-bezier(.5,.1,.3,1) .15s forwards,inkin .9s ease 1.7s forwards}
 @keyframes draw{to{stroke-dashoffset:0}}
 @keyframes inkin{to{fill:#cf4a1c;stroke:transparent}}
@@ -294,25 +328,27 @@ button.bg-brand-400.rounded-xl:disabled{box-shadow:inset 0 1px 0 rgba(255,255,25
 @media (prefers-reduced-motion:reduce){.hello{animation:none;stroke-dashoffset:0;fill:#cf4a1c;stroke:transparent}.rise{animation:none;opacity:1}}
 </style>
 </head>
-<body class="font-sans" x-data="app()" x-init="route();splashInit()" @hashchange.window="route()" @keydown.escape.window="drawer=null;gap=false;if(splash&&ready)closeSplash();if(tour)endTour()" @keydown.enter.window="if(splash&&ready)closeSplash()" @keydown.arrow-right.window="if(tour)nextStep()" @keydown.arrow-left.window="if(tour)prevStep()">
+<body class="font-sans" :class="splash&&'sp-on'" x-data="app()" x-init="route();splashInit()" @hashchange.window="route()" @keydown.escape.window="drawer=null;gap=false;if(splash&&ready)closeSplash();if(tour)endTour()" @keydown.enter.window="if(splash&&ready)closeSplash()" @keydown.arrow-right.window="if(tour)nextStep()" @keydown.arrow-left.window="if(tour)prevStep()">
 
 <!-- SPLASH -->
-<div x-show="splash" x-cloak x-transition:leave="transition duration-700 ease-in" x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-110" class="splash fixed inset-0 z-[100] flex flex-col items-center justify-center overflow-y-auto px-6 py-8 text-center" role="dialog" aria-label="Welcome">
- <div class="hello-wrap">
-  <template x-for="g in [gr[gi]]" :key="gi"><svg viewBox="0 0 640 240" class="h-auto w-[min(80vw,440px)]" role="img" :aria-label="g"><text x="320" y="170" text-anchor="middle" class="hello" x-text="g"></text></svg></template>
- </div>
- <div x-show="ready" x-transition:enter="transition duration-700 ease-out" x-transition:enter-start="opacity-0 translate-y-3" x-transition:enter-end="opacity-100 translate-y-0" class="flex flex-col items-center">
-  <div class="relative mb-3 flex flex-col items-center">
-    <div class="relative h-28 w-28 overflow-hidden rounded-[28px] border border-brand-400/35 shadow-[0_12px_44px_rgba(207,74,28,0.45)]">
-      <video src="/static/logo_animation.mp4" autoplay loop muted playsinline class="h-full w-full object-cover"></video>
-    </div>
-    <div class="mt-3 text-center">
-      <div class="text-3xl font-extrabold tracking-tight">Orbit Triage</div>
-      <div class="font-mono text-[11px] uppercase tracking-[.2em] text-brand-300">Security Incident Assistant</div>
-    </div>
-  </div><p class="mt-5 max-w-md text-[15px] leading-relaxed text-white/75">Built for SOC analysts who get buried in logs from a dozen systems during an incident. Orbit Triage reads them all, lines up every timestamp on one UTC clock, and answers questions like <span class="text-white">“did the scanner later sign in?”</span> with proof from the source files.</p><div class="mt-6 grid w-full max-w-md grid-cols-1 gap-2 text-left text-[13px] sm:grid-cols-3"><div class="rounded-xl border border-white/10 bg-white/[.04] px-3 py-2.5"><div class="font-mono text-[11px] text-brand-300">01 · Load</div><div class="mt-0.5 text-white/70">20 logs, rules and runbooks</div></div><div class="rounded-xl border border-white/10 bg-white/[.04] px-3 py-2.5"><div class="font-mono text-[11px] text-brand-300">02 · Ask</div><div class="mt-0.5 text-white/70">Cited answers, no guessing</div></div><div class="rounded-xl border border-white/10 bg-white/[.04] px-3 py-2.5"><div class="font-mono text-[11px] text-brand-300">03 · Brief</div><div class="mt-0.5 text-white/70">Severity and next steps, ready to share</div></div></div>
-  <button @click="closeSplash()" x-ref="go" class="mt-8 min-h-[48px] rounded-xl bg-brand-400 px-8 text-sm font-bold text-white transition hover:bg-[#e0592a]">Get started</button>
-  <p class="mt-4 text-xs text-white/40">Or press Enter</p>
+<div x-show="splash" x-cloak x-ref="splash" :class="leaving&&'leaving'" class="splash fixed inset-0 z-[100] flex flex-col items-center overflow-y-auto overflow-x-hidden px-6 py-8 text-center" role="dialog" aria-label="Welcome">
+ <div class="sp-bg"></div>
+ <div class="relative m-auto flex flex-col items-center">
+  <div class="sp-stage">
+   <div class="sp-amb">
+    <span class="sp-glow"></span><span class="sp-pulse" style="--d:1.6s"></span><span class="sp-pulse" style="--d:2.9s"></span><span class="sp-pulse" style="--d:4.2s"></span>
+    <svg class="sp-orbit" viewBox="0 0 240 240" aria-hidden="true"><circle cx="120" cy="120" r="116" fill="none" stroke="rgba(238,122,77,.3)" stroke-width="1" stroke-dasharray="1.5 9" stroke-linecap="round"/><circle cx="120" cy="4" r="2.6" fill="#ee7a4d"/></svg>
+   </div>
+   <div x-ref="slogo" class="logo-fly"><svg class="logo-in" viewBox="0 0 32 32" width="116" height="116" role="img" aria-label="Orbit Triage logo"><defs><linearGradient id="sg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e8663a"/><stop offset=".5" stop-color="#b8381a"/><stop offset="1" stop-color="#5c1606"/></linearGradient><clipPath id="sc"><rect width="32" height="32" rx="9"/></clipPath><linearGradient id="ss" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity=".5"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient></defs><rect width="32" height="32" rx="9" fill="url(#sg)"/><path class="lg-fill" d="M16 5.5 24.5 8.8v6.4c0 5-3.4 8.6-8.5 10.8-5.1-2.2-8.5-5.8-8.5-10.8V8.8Z" fill="#0b0c11"/><path class="lg-line" pathLength="1" d="M16 5.5 24.5 8.8v6.4c0 5-3.4 8.6-8.5 10.8-5.1-2.2-8.5-5.8-8.5-10.8V8.8Z" fill="none" stroke="rgba(255,255,255,.4)" stroke-width=".5" stroke-linejoin="round"/><g transform="rotate(-28 16 16.2)"><path class="lg-ring" pathLength="1" d="M27.5 16.2A11.5 4.4 0 1 1 4.5 16.2A11.5 4.4 0 1 1 27.5 16.2" fill="none" stroke="#ffd9c9" stroke-width="1.8" stroke-linecap="round"/><circle class="lg-dot" r="2.3" fill="#fff"><animateMotion dur="7s" begin="1.6s" repeatCount="indefinite" path="M27.5 16.2A11.5 4.4 0 1 1 4.5 16.2A11.5 4.4 0 1 1 27.5 16.2"/></circle></g><g clip-path="url(#sc)"><g transform="skewX(-20)"><rect x="-16" y="-4" width="11" height="40" fill="url(#ss)"><animateTransform attributeName="transform" type="translate" from="0 0" to="62 0" begin="1.25s" dur=".95s" fill="freeze" calcMode="spline" keySplines=".4 0 .2 1" keyTimes="0;1"/></rect></g></g></svg></div>
+  </div>
+  <div x-show="ready" class="sp-body flex flex-col items-center">
+   <h1 class="sp-name text-4xl font-bold tracking-tight">Orbit Triage</h1>
+   <div class="st mt-1.5 font-mono text-[11px] uppercase tracking-[.2em] text-brand-300" style="--d:.15s">Security incident assistant</div>
+   <p class="st mt-5 max-w-md text-[15px] leading-relaxed text-white/75" style="--d:.28s">Built for SOC analysts who get buried in logs from a dozen systems during an incident. Orbit Triage reads them all, lines up every timestamp on one UTC clock, and answers questions like <span class="text-white">“did the scanner later sign in?”</span> with proof from the source files.</p>
+   <div class="mt-6 grid w-full max-w-md grid-cols-1 gap-2 text-left text-[13px] sm:grid-cols-3"><div class="st rounded-xl border border-white/10 bg-white/[.04] px-3 py-2.5" style="--d:.42s"><div class="font-mono text-[11px] text-brand-300">01 · Load</div><div class="mt-0.5 text-white/70">20 logs, rules and runbooks</div></div><div class="st rounded-xl border border-white/10 bg-white/[.04] px-3 py-2.5" style="--d:.52s"><div class="font-mono text-[11px] text-brand-300">02 · Ask</div><div class="mt-0.5 text-white/70">Cited answers, no guessing</div></div><div class="st rounded-xl border border-white/10 bg-white/[.04] px-3 py-2.5" style="--d:.62s"><div class="font-mono text-[11px] text-brand-300">03 · Brief</div><div class="mt-0.5 text-white/70">Severity and next steps, ready to share</div></div></div>
+   <button @click="closeSplash()" x-ref="go" class="st mt-8 min-h-[48px] rounded-xl bg-brand-400 px-8 text-sm font-bold text-white transition hover:bg-[#e0592a]" style="--d:.8s">Get started</button>
+   <p class="st mt-4 text-xs text-white/40" style="--d:.95s">Or press Enter</p>
+  </div>
  </div>
 </div>
 
@@ -336,7 +372,7 @@ button.bg-brand-400.rounded-xl:disabled{box-shadow:inset 0 1px 0 rgba(255,255,25
 
 
 <main class="min-w-0 p-5 pb-36 md:p-9 md:pb-36">
-<header class="mx-auto mb-8 flex max-w-6xl flex-wrap items-center justify-between gap-3"><div class="flex items-center gap-3"><img src="/static/favicon.svg" class="h-8 w-8 rounded-[9px] shadow-[0_0_16px_rgba(207,74,28,.6)]" alt="Orbit Logo"><div class="text-[15px] font-semibold tracking-tight">Orbit Triage</div></div><div class="flex items-center gap-3"><button data-tour="tourbtn" @click="openTour()" class="flex min-h-[40px] items-center gap-1.5 rounded-full glass px-3 text-xs text-white/70 transition hover:text-white sm:px-3.5" aria-label="Take the app tour"><span class="h-4 w-4" x-html="ic('help')"></span><span class="hidden sm:inline">Tour</span></button><div class="relative h-9 w-9 shrink-0" role="img" :aria-label="searching?'Searching the data pack':'Idle'"><span x-show="searching" class="absolute inset-0 animate-ping rounded-full bg-brand-400/30"></span><span class="absolute inset-0 rounded-full border border-dashed border-brand-400/50" :class="searching&&'core-spin'"></span><span class="orb absolute inset-2 rounded-full bg-gradient-to-br from-[#e8663a] via-[#b8381a] to-[#5c1606] transition-all duration-500" :class="searching?'scale-110 shadow-[0_0_22px_rgba(207,74,28,.9)]':'shadow-[0_0_10px_rgba(207,74,28,.4)]'"></span></div><div class="flex items-center gap-2 rounded-full glass px-3.5 py-1.5 text-xs text-white/70"><span class="h-2 w-2 rounded-full" :class="loaded>=20?'bg-brand-400 animate-pulse':'bg-white/30'"></span><span x-text="loaded>=20?'Data pack ready':'No data pack'"></span></div></div></header>
+<header class="mx-auto mb-8 flex max-w-6xl flex-wrap items-center justify-between gap-3"><div class="flex items-center gap-3"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" class="hlogo h-8 w-8 shrink-0"><defs><linearGradient id="gb" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e8663a"/><stop offset=".5" stop-color="#b8381a"/><stop offset="1" stop-color="#5c1606"/></linearGradient></defs><rect width="32" height="32" rx="9" fill="url(#gb)"/><path d="M16 5.5 24.5 8.8v6.4c0 5-3.4 8.6-8.5 10.8-5.1-2.2-8.5-5.8-8.5-10.8V8.8Z" fill="#0b0c11" stroke="rgba(255,255,255,.14)" stroke-width=".5"/><ellipse cx="16" cy="16.2" rx="11.5" ry="4.4" transform="rotate(-28 16 16.2)" fill="none" stroke="#ffd9c9" stroke-width="1.8"/><circle cx="26.1" cy="10.8" r="2.3" fill="#fff"/></svg><div class="text-[15px] font-semibold tracking-tight">Orbit Triage</div></div><div class="flex items-center gap-3"><button data-tour="tourbtn" @click="openTour()" class="flex min-h-[40px] items-center gap-1.5 rounded-full glass px-3 text-xs text-white/70 transition hover:text-white sm:px-3.5" aria-label="Take the app tour"><span class="h-4 w-4" x-html="ic('help')"></span><span class="hidden sm:inline">Tour</span></button><div class="relative h-9 w-9 shrink-0" role="img" :aria-label="searching?'Searching the data pack':'Idle'"><span x-show="searching" class="absolute inset-0 animate-ping rounded-full bg-brand-400/30"></span><span class="absolute inset-0 rounded-full border border-dashed border-brand-400/50" :class="searching&&'core-spin'"></span><span class="orb absolute inset-2 rounded-full bg-gradient-to-br from-[#e8663a] via-[#b8381a] to-[#5c1606] transition-all duration-500" :class="searching?'scale-110 shadow-[0_0_22px_rgba(207,74,28,.9)]':'shadow-[0_0_10px_rgba(207,74,28,.4)]'"></span></div><div class="flex items-center gap-2 rounded-full glass px-3.5 py-1.5 text-xs text-white/70"><span class="h-2 w-2 rounded-full" :class="loaded>=20?'bg-brand-400 animate-pulse':'bg-white/30'"></span><span x-text="loaded>=20?'Data pack ready':'No data pack'"></span></div></div></header>
 
 <!-- LOADER -->
 <section x-show="page==='loader'" x-cloak x-transition:enter="transition duration-500 ease-out" x-transition:enter-start="opacity-0 translate-y-3" x-transition:enter-end="opacity-100 translate-y-0" class="mx-auto max-w-5xl">
