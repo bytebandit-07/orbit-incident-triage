@@ -2,11 +2,17 @@
 > **Tech Fusion '26 AI Hackathon — Problem Statement C**  
 > *Autonomous, Audit-Compliant Security Incident Triage & Correlation Engine for Orbit Logistics*
 
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Render-brightgreen?style=for-the-badge&logo=render)](https://orbit-incident-triage.onrender.com)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.110.0-009688.svg?style=flat&logo=fastapi)](https://fastapi.tiangolo.com)
 [![Python 3.11+](https://img.shields.io/badge/Python-3.11%2B-blue.svg?style=flat&logo=python)](https://www.python.org/)
 [![Google Gemini](https://img.shields.io/badge/Model-Gemini%203.5%20Flash-4285F4.svg?style=flat&logo=google)](https://ai.google.dev/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED.svg?style=flat&logo=docker)](https://www.docker.com/)
 [![Tests](https://img.shields.io/badge/Tests-70%2F70%20Passing-brightgreen.svg?style=flat)]()
+
+🌐 **Live URL**: [https://orbit-incident-triage.onrender.com/](https://orbit-incident-triage.onrender.com/)  
+👥 **Authors & Team**:
+- **Muhammad Talal**
+- **Ashir Bin Hamid**
 
 ---
 
@@ -193,5 +199,8 @@ docker run -d -p 8000:8000 --env-file .env --name orbit-triage orbit-incident-tr
 ---
 
 ## 👥 Authors & Team
-- **ByteBandits** — Tech Fusion '26 AI Hackathon
-- Problem Statement C: *Security Incident Triage Assistant*
+- **Muhammad Talal**
+- **Ashir Bin Hamid**
+- **Team ByteBandits** — Tech Fusion '26 AI Hackathon
+- **Problem Statement C**: *Security Incident Triage Assistant*
+- **Live Deployment**: [https://orbit-incident-triage.onrender.com/](https://orbit-incident-triage.onrender.com/)
