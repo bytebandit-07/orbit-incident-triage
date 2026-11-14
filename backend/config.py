@@ -128,6 +128,10 @@ DC_LOG_COVERAGE_UTC: Tuple[time, time] = (time(3, 0, 0), time(19, 0, 0))
 # session START = close time - duration.
 FW_INTERNAL_REBOOT_PKT: Tuple[time, time] = (time(11, 32, 0), time(12, 28, 59))
 
+# Scanner host that the change calendar may name as the "performed by" actor. Used by
+# change_matcher only as a HINT when a calendar row says "scanner" without listing an IP.
+APPROVED_SCANNER_IPS: Tuple[str, ...] = ("10.10.9.50",)
+
 # Log sources that do not exist (file 20). Anything that would need these must be
 # answered "Not enough evidence in the logs" and cite file 20.
 MISSING_LOG_SOURCES: Tuple[str, ...] = (
