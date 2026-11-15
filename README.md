@@ -135,8 +135,7 @@ source venv/bin/activate
 pip install -r requirements.txt
 
 # 4. Configure environment variables
-cp .env.example .env
-# Edit .env and paste your GEMINI_API_KEY
+export GEMINI_API_KEY="<api-key>"
 ```
 
 ### Run Unit Test Suite (70/70 Tests)
